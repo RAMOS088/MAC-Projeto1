@@ -13,11 +13,16 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 unsigned long lastTimeStamp = 0;
 uint16_t corPersonalizada = tft.color565(128, 64, 200);
 
-bool jogo=false;
+
 int totalDrink=0;
 int currentItem = -1;
-const int numItems = 5;
 int m=0;
+int galoX = 0;
+int galoY = 0;
+int bolaX = 0;
+int bolaY = 0;
+bool turn=false;
+bool jogo=false;
 bool clear = false;
 
 char tabuleiro[3][3]={{'\0','\0 ','\0'},
@@ -122,9 +127,7 @@ bool buttonPressedLeft() {
   return pressed;
 }
 
-int galoX = 0;
-int galoY = 0;
-bool turn=true;
+
 
 void onConnect(){
   Serial.println("Connected!.");
@@ -183,9 +186,6 @@ void loop() {
     else if(m==1 && currentItem == 3){
       m = 2;
     }
-    else if(m == 1 && currentItem == 4){
-      m=0;
-    }
 
 
     else if(m == 2 && currentItem == 0){
@@ -208,17 +208,31 @@ void loop() {
       totalDrink = 0;
       m=1;
     }
-    else if(m == 2 && currentItem == 5){
-      m=1;
-    }
+
+
 
     else if(m==3 && currentItem == 0){
       m=4;
     }
-    else if(m==3 && currentItem == 0){
+    else if(m==3 && currentItem == 2){
+      m=5;
+    }
+    
+    currentItem = 0; 
+    navigateMenu(0);
+  }
+
+  if(buttonPressedCircle()){
+
+    if(m == 1){
       m=0;
     }
-
+    else if(m == 2){
+      m=1;
+    }
+    else if(m == 3){
+      m=0;
+    }
     currentItem = 0; 
     navigateMenu(0);
   }
@@ -227,6 +241,7 @@ void loop() {
 void navigateMenu(int direction) {
   switch(m){
     case 0:{
+      tft.setTextSize(1);
       tft.fillScreen(ST77XX_BLACK);
       String menuItems[] = {"BebidaPredefinida", "BebidaPersonalizada", "Jogos"};
       currentItem = currentItem + direction;
@@ -236,7 +251,7 @@ void navigateMenu(int direction) {
       else if(currentItem == -1)
         currentItem = 2;
 
-      for (int i = 0; i < numItems-2; i++) {  
+      for (int i = 0; i < 3; i++) {  
         if (i == currentItem) {
           tft.setTextColor(ST77XX_GREEN);  
         } else {
@@ -254,7 +269,7 @@ void navigateMenu(int direction) {
 
     case 1:{
       tft.fillScreen(ST77XX_BLACK);
-      String menuItems1[] = {"Bebida 1", "Bebida 2", "Bebida 3", "Bebida 4","Sair"};
+      String menuItems1[] = {"Bebida 1", "Bebida 2", "Bebida 3", "Bebida 4"};
       currentItem = currentItem + direction;
 
       if(currentItem == 5)
@@ -262,7 +277,7 @@ void navigateMenu(int direction) {
       else if(currentItem == -1)
         currentItem = 4;
 
-      for (int i = 0; i < numItems; i++) {  
+      for (int i = 0; i < 4; i++) {  
         if (i == currentItem) {
           tft.setTextColor(ST77XX_GREEN);
         } else {
@@ -280,7 +295,7 @@ void navigateMenu(int direction) {
       tft.fillScreen(ST77XX_BLACK);
       tft.setCursor(20, 10);
       tft.print("Quantidade:");
-      String menuItems2[] = {"1/4", "2/4", "3/4", "4/4","RESET","Sair"};
+      String menuItems2[] = {"1/4", "2/4", "3/4", "4/4","RESET"};
       currentItem = currentItem + direction;
 
       if(totalDrink == 0){
@@ -361,7 +376,7 @@ void navigateMenu(int direction) {
         
       }
 
-      for (int i = 4; i < 6; i++) {  
+      for (int i = 4; i < 5; i++) {  
         if (i == currentItem) {
           tft.setTextColor(ST77XX_GREEN);
         } else {
@@ -377,7 +392,7 @@ void navigateMenu(int direction) {
     }
     case 3:{
       tft.fillScreen(ST77XX_BLACK);
-      String menuItems1[] = {"Jogo do Galo", "Snake", "Pong","Sair"};
+      String menuItems1[] = {"Jogo do Galo", "Snake", "Pong"};
       currentItem = currentItem + direction;
 
       if(currentItem == 4)
@@ -385,7 +400,7 @@ void navigateMenu(int direction) {
       else if(currentItem == -1)
         currentItem = 3;
 
-      for (int i = 0; i < 4; i++) {  
+      for (int i = 0; i < 3; i++) {  
         if (i == currentItem) {
           tft.setTextColor(ST77XX_GREEN);
         } else {
@@ -396,120 +411,140 @@ void navigateMenu(int direction) {
       }
     break;
     }
+
+
     case 4:{
-      jogo=true;
-      tft.fillScreen(ST77XX_BLACK);
-      tft.setTextColor(ST77XX_GREEN);
-      tft.setTextSize(2);
-      while(jogo){
-        Serial.print("X: ");
-        Serial.print(galoX);
-        Serial.print(" Y: ");
-        Serial.println(galoY);
-
-        tft.drawLine(65,109,65,19,ST77XX_WHITE);
-        tft.drawLine(95,109,95,19,ST77XX_WHITE);
-
-        tft.drawLine(35,79,125,79,ST77XX_WHITE);
-        tft.drawLine(35,49,125,49,ST77XX_WHITE);
-        if(buttonPressedUp()){
-          galoY = galoY - 1;
-          clear = !clear;
-        }
-
-        else if(buttonPressedDown()){
-          galoY = galoY + 1;
-          clear = !clear;
-        }
-
-        else if(buttonPressedRight()){
-          galoX = galoX + 1;
-          clear = !clear;
-        }
-        else if(buttonPressedLeft()){
-          galoX = galoX - 1;
-          clear = !clear;
-        }
-
-        if(galoX==3){
-          galoX=0;
-        }
-        else if (galoX == -1){
-          galoX=2;
-        }
-        if(galoY==3){
-          galoY=0;
-        }
-        else if (galoY == -1){
-          galoY=2;
-        }
-
-        if(turn){
-          printTabuleiro();
-          tft.setTextColor(ST77XX_BLUE);
-          tft.print("O"); 
-          tft.setTextColor(ST77XX_GREEN);
-          if(buttonPressedCross()){
-            if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
-                tft.fillScreen(ST77XX_BLACK);
-                tft.setCursor(50,34);
-                tft.print("Espaço Ocupado");
-                clear=!clear;
-                delay(2000);
-            }
-            else{
-            tabuleiro[galoX][galoY]='O';
-            turn = !turn;
-            }
-          }
-        }
-        else if(!turn){
-          printTabuleiro();
-          tft.setTextColor(ST77XX_BLUE);
-          tft.print("X"); 
-          tft.setTextColor(ST77XX_GREEN);
-          if(buttonPressedCross()){
-            if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
-                tft.fillScreen(ST77XX_BLACK);
-                tft.setCursor(50,34);
-                tft.print("Espaço Ocupado");
-                clear=!clear;
-                delay(2000);
-            }
-            else{
-            tabuleiro[galoX][galoY]='X';
-            turn = !turn;
-            }
-          }
-        }
-        
-        if(verificaVitoria()){
-          jogo=false;
-          m=0;
-          currentItem=0;
-          for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 3; j++){
-              tabuleiro[i][j]='\0';
-            }       
-          }
-        }
-
-        if(buttonPressedCircle()){
-          jogo=false;
-          m=0;
-          currentItem=0;
-          for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 3; j++){
-              tabuleiro[i][j]='\0';
-            }       
-          }
-        }
-      }
-    tft.setTextSize(1);
+      jogoDoGalo();
     break;
+    }
+
+
+    case 5:{
+      pong();
+    break;  
     }
   }
 }
+
+void jogoDoGalo(){
+  jogo=true;
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setTextSize(2);
+  while(jogo){
+    Serial.print("X: ");
+    Serial.print(galoX);
+    Serial.print(" Y: ");
+    Serial.println(galoY);
+
+    tft.drawLine(65,109,65,19,ST77XX_WHITE);
+    tft.drawLine(95,109,95,19,ST77XX_WHITE);
+
+    tft.drawLine(35,79,125,79,ST77XX_WHITE);
+    tft.drawLine(35,49,125,49,ST77XX_WHITE);
+    if(buttonPressedUp()){
+      galoY = galoY - 1;
+      clear = !clear;
+    }
+
+    else if(buttonPressedDown()){
+      galoY = galoY + 1;
+      clear = !clear;
+    }
+
+    else if(buttonPressedRight()){
+      galoX = galoX + 1;
+      clear = !clear;
+    }
+    else if(buttonPressedLeft()){
+      galoX = galoX - 1;
+      clear = !clear;
+    }
+
+    if(galoX==3){
+      galoX=0;
+    }
+    else if (galoX == -1){
+      galoX=2;
+    }
+    if(galoY==3){
+      galoY=0;
+    }
+    else if (galoY == -1){
+      galoY=2;
+    }
+
+    if(turn){
+      printTabuleiro();
+      tft.setTextColor(ST77XX_BLUE);
+      tft.print("O"); 
+      tft.setTextColor(ST77XX_GREEN);
+      if(buttonPressedCross()){
+        if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
+            tft.fillScreen(ST77XX_BLACK);
+            tft.setCursor(50,34);
+            tft.print("Espaço Ocupado");
+            clear=!clear;
+            delay(2000);
+        }
+        else{
+        tabuleiro[galoX][galoY]='O';
+        turn = !turn;
+        }
+      }
+    }
+    else if(!turn){
+      printTabuleiro();
+      tft.setTextColor(ST77XX_BLUE);
+      tft.print("X"); 
+      tft.setTextColor(ST77XX_GREEN);
+      if(buttonPressedCross()){
+        if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
+            tft.fillScreen(ST77XX_BLACK);
+            tft.setCursor(50,34);
+            tft.setTextSize(1);
+            tft.print("Espaço Ocupado");
+            tft.setTextSize(2);
+            clear=!clear;
+            delay(2000);
+        }
+        else{
+        tabuleiro[galoX][galoY]='X';
+        turn = !turn;
+        }
+      }
+    }
+    
+    if(verificaVitoria()){
+      jogo=false;
+      m=0;
+      currentItem=0;
+      turn = false;
+      for(int i = 0; i < 3; i++){
+        for(int j = 0; j < 3; j++){
+          tabuleiro[i][j]='\0';
+        }       
+      }
+      navigateMenu(0);
+    }
+
+    if(buttonPressedCircle()){
+      jogo=false;
+      m=0;
+      currentItem=0;
+      for(int i = 0; i < 3; i++){
+        for(int j = 0; j < 3; j++){
+          tabuleiro[i][j]='\0';
+        }       
+      }
+      navigateMenu(0);
+    }
+  }
+tft.setTextSize(1);
+}
+
+
+
 
 void printTabuleiro(){
   if(clear){
@@ -518,11 +553,11 @@ void printTabuleiro(){
   }
   for(int i = 0; i < 3; i++){
     for(int j = 0; j < 3; j++){
-      tft.setCursor(50+(30*i),34+(30*j));
+      tft.setCursor(45+(30*i),27+(30*j));
       tft.print(tabuleiro[i][j]);
     }
   }
-    tft.setCursor(50+(30*galoX),34+(30*galoY));
+    tft.setCursor(45+(30*galoX),27+(30*galoY));
 }
 
 bool verificaVitoria(){
@@ -560,3 +595,33 @@ bool verificaVitoria(){
 	return false;
 }
 
+void pong(){
+  jogo = true;
+  printCampo();
+  drawScore();
+  while(jogo){
+    if(buttonPressedCircle()){
+      m=0;
+      jogo = false;
+      currentItem = 0;
+      navigateMenu(0);
+    }
+  }
+}
+
+void printCampo(){
+  tft.fillScreen(ST77XX_BLACK);
+  tft.drawRect(0,  0, 160, 128, ST77XX_WHITE); 
+  for (int i = 0; i < 128; i = i+10) {
+    tft.drawLine(80, i, 80, i + 5, ST77XX_WHITE);
+  }
+}
+
+void drawScore() {
+  tft.setTextSize(2);
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setCursor(35, 1);
+  tft.println(0);
+  tft.setCursor(115, 1);
+  tft.println(0);
+}
