@@ -18,10 +18,109 @@ int totalDrink=0;
 int currentItem = -1;
 const int numItems = 5;
 int m=0;
+bool clear = false;
 
 char tabuleiro[3][3]={{'\0','\0 ','\0'},
 							        {'\0','\0','\0'},
 							        {'\0','\0','\0'}};
+
+
+int buttonStateCross = LOW, lastButtonStateCross = LOW;
+int buttonStateCircle = LOW, lastButtonStateCircle = LOW;
+int buttonStateUp = LOW, lastButtonStateUp = LOW;
+int buttonStateDown = LOW, lastButtonStateDown = LOW;
+int buttonStateRight = LOW, lastButtonStateRight = LOW;
+int buttonStateLeft = LOW, lastButtonStateLeft = LOW;
+
+unsigned long lastDebounceTimeCross = 0, lastDebounceTimeCircle = 0;
+unsigned long lastDebounceTimeUp = 0, lastDebounceTimeDown = 0;
+unsigned long lastDebounceTimeRight = 0, lastDebounceTimeLeft = 0;
+
+const unsigned long debounceDelay = 50;
+
+bool buttonPressedCross() {
+  int reading = ps5.Cross();
+  bool pressed = false;
+  if (reading != lastButtonStateCross) lastDebounceTimeCross = millis();
+  if ((millis() - lastDebounceTimeCross) > debounceDelay) {
+    if (reading != buttonStateCross) {
+      buttonStateCross = reading;
+      if (buttonStateCross == HIGH) pressed = true;
+    }
+  }
+  lastButtonStateCross = reading;
+  return pressed;
+}
+
+bool buttonPressedCircle() {
+  int reading = ps5.Circle();
+  bool pressed = false;
+  if (reading != lastButtonStateCircle) lastDebounceTimeCircle = millis();
+  if ((millis() - lastDebounceTimeCircle) > debounceDelay) {
+    if (reading != buttonStateCircle) {
+      buttonStateCircle = reading;
+      if (buttonStateCircle == HIGH) pressed = true;
+    }
+  }
+  lastButtonStateCircle = reading;
+  return pressed;
+}
+
+bool buttonPressedUp() {
+  int reading = ps5.Up();
+  bool pressed = false;
+  if (reading != lastButtonStateUp) lastDebounceTimeUp = millis();
+  if ((millis() - lastDebounceTimeUp) > debounceDelay) {
+    if (reading != buttonStateUp) {
+      buttonStateUp = reading;
+      if (buttonStateUp == HIGH) pressed = true;
+    }
+  }
+  lastButtonStateUp = reading;
+  return pressed;
+}
+
+bool buttonPressedDown() {
+  int reading = ps5.Down();
+  bool pressed = false;
+  if (reading != lastButtonStateDown) lastDebounceTimeDown = millis();
+  if ((millis() - lastDebounceTimeDown) > debounceDelay) {
+    if (reading != buttonStateDown) {
+      buttonStateDown = reading;
+      if (buttonStateDown == HIGH) pressed = true;
+    }
+  }
+  lastButtonStateDown = reading;
+  return pressed;
+}
+
+bool buttonPressedRight() {
+  int reading = ps5.Right();
+  bool pressed = false;
+  if (reading != lastButtonStateRight) lastDebounceTimeRight = millis();
+  if ((millis() - lastDebounceTimeRight) > debounceDelay) {
+    if (reading != buttonStateRight) {
+      buttonStateRight = reading;
+      if (buttonStateRight == HIGH) pressed = true;
+    }
+  }
+  lastButtonStateRight = reading;
+  return pressed;
+}
+
+bool buttonPressedLeft() {
+  int reading = ps5.Left();
+  bool pressed = false;
+  if (reading != lastButtonStateLeft) lastDebounceTimeLeft = millis();
+  if ((millis() - lastDebounceTimeLeft) > debounceDelay) {
+    if (reading != buttonStateLeft) {
+      buttonStateLeft = reading;
+      if (buttonStateLeft == HIGH) pressed = true;
+    }
+  }
+  lastButtonStateLeft = reading;
+  return pressed;
+}
 
 int galoX = 0;
 int galoY = 0;
@@ -50,23 +149,20 @@ void setup() {
 
   SPI.begin(TFT_SCLK, -1, TFT_MOSI);
   tft.initR(INITR_GREENTAB);
-  tft.setRotation(1);
+  tft.setRotation(3);
   navigateMenu(NULL);
 }
 
 
-
 void loop() {
   Serial.println(currentItem);
-  if (ps5.Up() == HIGH) {
+  if (buttonPressedUp()) {
     navigateMenu(-1);
-    delay(200);
   } 
-  if (ps5.Down() == HIGH) {
+  if (buttonPressedDown()) {
     navigateMenu(1);
-    delay(200);
   }
-  if (ps5.Cross() == HIGH) {
+  if (buttonPressedCross()) {
     Serial.println(currentItem);
     if(m == 0 && currentItem == 1){
       m=1;
@@ -125,7 +221,6 @@ void loop() {
 
     currentItem = 0; 
     navigateMenu(0);
-    delay(500);
   }
 }
 
@@ -140,8 +235,6 @@ void navigateMenu(int direction) {
         currentItem = 0;
       else if(currentItem == -1)
         currentItem = 2;
-
-      //Serial.println(currentItem);
 
       for (int i = 0; i < numItems-2; i++) {  
         if (i == currentItem) {
@@ -268,7 +361,7 @@ void navigateMenu(int direction) {
         
       }
 
-      for (int i = 4; i < 2; i++) {  
+      for (int i = 4; i < 6; i++) {  
         if (i == currentItem) {
           tft.setTextColor(ST77XX_GREEN);
         } else {
@@ -313,30 +406,29 @@ void navigateMenu(int direction) {
         Serial.print(galoX);
         Serial.print(" Y: ");
         Serial.println(galoY);
+
         tft.drawLine(65,109,65,19,ST77XX_WHITE);
         tft.drawLine(95,109,95,19,ST77XX_WHITE);
 
         tft.drawLine(35,79,125,79,ST77XX_WHITE);
         tft.drawLine(35,49,125,49,ST77XX_WHITE);
-        if(ps5.Up() == HIGH){
-          delay(500);
+        if(buttonPressedUp()){
           galoY = galoY - 1;
-          tft.fillScreen(ST77XX_BLACK);
+          clear = !clear;
         }
-        else if(ps5.Down() == HIGH){
-          delay(200);
+
+        else if(buttonPressedDown()){
           galoY = galoY + 1;
-          tft.fillScreen(ST77XX_BLACK);
+          clear = !clear;
         }
-        else if(ps5.Right() == HIGH){
-          delay(200);
+
+        else if(buttonPressedRight()){
           galoX = galoX + 1;
-          tft.fillScreen(ST77XX_BLACK);
+          clear = !clear;
         }
-        else if(ps5.Left() == HIGH){
-          delay(200);
+        else if(buttonPressedLeft()){
           galoX = galoX - 1;
-          tft.fillScreen(ST77XX_BLACK);
+          clear = !clear;
         }
 
         if(galoX==3){
@@ -353,24 +445,118 @@ void navigateMenu(int direction) {
         }
 
         if(turn){
-          tft.setCursor(50+(30*galoX),34+(30*galoY));
+          printTabuleiro();
+          tft.setTextColor(ST77XX_BLUE);
           tft.print("O"); 
+          tft.setTextColor(ST77XX_GREEN);
+          if(buttonPressedCross()){
+            if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
+                tft.fillScreen(ST77XX_BLACK);
+                tft.setCursor(50,34);
+                tft.print("Espaço Ocupado");
+                clear=!clear;
+                delay(2000);
+            }
+            else{
+            tabuleiro[galoX][galoY]='O';
+            turn = !turn;
+            }
+          }
         }
         else if(!turn){
-          tft.setCursor(50+(30*galoX),34+(30*galoY));
+          printTabuleiro();
+          tft.setTextColor(ST77XX_BLUE);
           tft.print("X"); 
+          tft.setTextColor(ST77XX_GREEN);
+          if(buttonPressedCross()){
+            if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
+                tft.fillScreen(ST77XX_BLACK);
+                tft.setCursor(50,34);
+                tft.print("Espaço Ocupado");
+                clear=!clear;
+                delay(2000);
+            }
+            else{
+            tabuleiro[galoX][galoY]='X';
+            turn = !turn;
+            }
+          }
         }
-
-        if(ps5.Circle() == HIGH){
+        
+        if(verificaVitoria()){
           jogo=false;
           m=0;
           currentItem=0;
+          for(int i = 0; i < 3; i++){
+            for(int j = 0; j < 3; j++){
+              tabuleiro[i][j]='\0';
+            }       
+          }
+        }
+
+        if(buttonPressedCircle()){
+          jogo=false;
+          m=0;
+          currentItem=0;
+          for(int i = 0; i < 3; i++){
+            for(int j = 0; j < 3; j++){
+              tabuleiro[i][j]='\0';
+            }       
+          }
         }
       }
     tft.setTextSize(1);
     break;
     }
-
-
   }
 }
+
+void printTabuleiro(){
+  if(clear){
+    tft.fillScreen(ST77XX_BLACK);
+    clear = !clear;
+  }
+  for(int i = 0; i < 3; i++){
+    for(int j = 0; j < 3; j++){
+      tft.setCursor(50+(30*i),34+(30*j));
+      tft.print(tabuleiro[i][j]);
+    }
+  }
+    tft.setCursor(50+(30*galoX),34+(30*galoY));
+}
+
+bool verificaVitoria(){
+
+	for (int i = 0; i < 3; i++){
+		if (tabuleiro[i][0] == tabuleiro[i][1] && tabuleiro[i][1] == tabuleiro[i][2] && tabuleiro[i][2] == 'X'){
+			return true;
+		}
+		 else if (tabuleiro[i][0] == tabuleiro[i][1] && tabuleiro[i][1] == tabuleiro[i][2] && tabuleiro[i][2] == 'O'){
+			return true;
+		}
+	}
+	for (int i = 0; i < 3; i++){
+		if (tabuleiro[0][i] == tabuleiro[1][i] && tabuleiro[1][i] == tabuleiro[2][i] && tabuleiro[2][i] == 'X'){
+			return true;
+		}
+		else if (tabuleiro[0][i] == tabuleiro[1][i] && tabuleiro[1][i] == tabuleiro[2][i] && tabuleiro[2][i] == 'O'){
+			return true;
+		}
+	}
+
+	if (tabuleiro[0][0] == tabuleiro[1][1] && tabuleiro[1][1] == tabuleiro[2][2] && tabuleiro[1][1] == 'X'){
+		return true;
+	}
+	else if (tabuleiro[0][0] == tabuleiro[1][1] && tabuleiro[1][1] == tabuleiro[2][2] && tabuleiro[1][1] == 'O'){
+		return true;
+	}
+
+	if (tabuleiro[0][2] == tabuleiro[1][1] && tabuleiro[1][1] == tabuleiro[2][0] && tabuleiro[1][1] == 'X'){
+		return true;
+	} 
+	else if (tabuleiro[0][2] == tabuleiro[1][1] && tabuleiro[1][1] == tabuleiro[2][0] && tabuleiro[1][1] == 'O'){
+		return true;
+	}
+	return false;
+}
+
