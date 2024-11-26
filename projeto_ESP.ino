@@ -15,12 +15,15 @@ uint16_t corPersonalizada = tft.color565(128, 64, 200);
 
 
 int totalDrink=0;
-int currentItem = -1;
+int currentItem = 0;
 int m=0;
 int galoX = 0;
 int galoY = 0;
 int bolaX = 0;
 int bolaY = 0;
+int raquete = 20;
+int alturaY = 53;
+int lastAlturaY = 52;
 bool turn=false;
 bool jogo=false;
 bool clear = false;
@@ -600,6 +603,16 @@ void pong(){
   printCampo();
   drawScore();
   while(jogo){
+    if(ps5.L2() == HIGH){
+      alturaY+=5;
+      printJogador1();
+      delay(50);
+    }
+    if(ps5.L1() == HIGH){
+      alturaY-=5;
+      delay(50);
+      printJogador1();
+    }
     if(buttonPressedCircle()){
       m=0;
       jogo = false;
@@ -625,3 +638,11 @@ void drawScore() {
   tft.setCursor(115, 1);
   tft.println(0);
 }
+
+void printJogador1() {
+  tft.drawLine(3, lastAlturaY, 3, lastAlturaY - raquete, ST77XX_BLACK);
+  tft.drawLine(3, alturaY, 3, alturaY - raquete, ST77XX_WHITE);
+  lastAlturaY = alturaY;
+}
+
+
