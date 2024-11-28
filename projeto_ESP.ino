@@ -2,6 +2,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
 #include <ps5Controller.h>
+#include <FastLED.h>
 
 #define TFT_CS     15
 #define TFT_DC     25
@@ -9,7 +10,16 @@
 #define TFT_MOSI   13
 #define TFT_SCLK   14
 
-#define LED 16
+#include <FastLED.h>
+
+#define LED_PIN     16       // Pin where the LED data line is connected
+#define NUM_LEDS    120      // Number of LEDs in your strip
+#define BRIGHTNESS  255     // Brightness (0 to 255)
+#define LED_TYPE    WS2812 // Type of LEDs (e.g., WS2812B, WS2811, APA102)
+#define COLOR_ORDER GRB     // Color order (GRB is common for WS2812B)
+
+CRGB leds[NUM_LEDS];   
+
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 unsigned long lastTimeStamp = 0;
@@ -217,7 +227,6 @@ void onDisConnect(){
 
 void setup() {
   Serial.begin(115200);
-  pinMode(LED, OUTPUT);
   ps5.attachOnConnect(onConnect);
   ps5.attachOnDisconnect(onDisConnect);
   ps5.begin("D0:BC:C1:63:5C:B2");  //your PS5 controller mac address 
@@ -230,19 +239,17 @@ void setup() {
   SPI.begin(TFT_SCLK, -1, TFT_MOSI);
   tft.initR(INITR_GREENTAB);
   tft.setRotation(3);
+  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.setBrightness(BRIGHTNESS);
   navigateMenu(NULL);
 }
 
-unsigned long previousMillis = 0;
-bool ledState = true;
+
 
 void loop() {
   //Serial.println(currentItem);
-  if (millis() - previousMillis >= 2000) {
-    previousMillis = millis();    // Update the timer
-    ledState = !ledState;         // Toggle the LED state
-    digitalWrite(LED, ledState);  // Apply the new state
-  }
+
+  p();
 
   if (buttonPressedUp()) {
     navigateMenu(-1);
@@ -257,6 +264,9 @@ void loop() {
     }
     else if(m == 0 && currentItem == 2){
       m=3;
+    }
+    else if(m == 0 && currentItem == 3){
+      m=6;
     }
 
     else if(m==1 && currentItem == 0){
@@ -320,9 +330,16 @@ void loop() {
     else if(m == 3){
       m=0;
     }
+    else if(m == 5){
+      m=0;
+    }
+    else if(m == 6){
+      m=0;
+    }
     currentItem = 0; 
     navigateMenu(0);
   }
+
   if (m == 5 || m == 4){
     navigateMenu(0);
   }
@@ -333,15 +350,15 @@ void navigateMenu(int direction) {
     case 0:{
       tft.setTextSize(1);
       tft.fillScreen(ST77XX_BLACK);
-      String menuItems[] = {"BebidaPredefinida", "BebidaPersonalizada", "Jogos"};
+      String menuItems[] = {"BebidaPredefinida", "BebidaPersonalizada", "Jogos","Luz"};
       currentItem = currentItem + direction;
 
-      if(currentItem == 3)
+      if(currentItem == 4)
         currentItem = 0;
       else if(currentItem == -1)
-        currentItem = 2;
+        currentItem = 3;
 
-      for (int i = 0; i < 3; i++) {  
+      for (int i = 0; i < 4; i++) {  
         if (i == currentItem) {
           tft.setTextColor(ST77XX_GREEN);  
         } else {
@@ -511,6 +528,30 @@ void navigateMenu(int direction) {
 
     case 5:{
       pong();
+    break;  
+    }
+
+    case 6:{
+      tft.setTextSize(1);
+      tft.fillScreen(ST77XX_BLACK);
+      String menuItems[] = {"Vermelho", "Verde", "Azul"};
+      currentItem = currentItem + direction;
+
+      if(currentItem == 3)
+        currentItem = 0;
+      else if(currentItem == -1)
+        currentItem = 2;
+
+      for (int i = 0; i < 3; i++) {  
+        if (i == currentItem) {
+          tft.setTextColor(ST77XX_GREEN);  
+        } else {
+          tft.setTextColor(ST77XX_WHITE);
+        }
+        tft.setCursor(20, 20 + i * 20);
+        tft.print(menuItems[i]);  
+      }
+      tft.setCursor(100,100);
     break;  
     }
   }
@@ -688,7 +729,6 @@ bool verificaVitoria(){
 
 void pong(){
   if(start){
-    Serial.println("comecar");
     printCampo();
     printScore();
     printTracos();
@@ -701,7 +741,6 @@ void pong(){
     start = false;
   }
   if(resetBall){
-    Serial.println("eiiiiiii");
     tft.fillScreen(ST77XX_BLACK);
     printCampo();
     printScore();
@@ -716,8 +755,7 @@ void pong(){
     printJogador2();
   }
   else{
-    Serial.println("sodufhdosuf");
-    if((millis()-ball_update) > 20){
+    if((millis()-ball_update) > 10){
       printTracos();
       ball_update = millis();
       int new_x = ball_x + ball_dir_x;
@@ -837,3 +875,12 @@ void printJogador2() {
   lastAltura2Y = altura2Y;
 }
 
+void p(){
+    if(currentItem == 0)
+      fill_solid(leds, NUM_LEDS, CRGB::Red);
+    else if(currentItem == 1)
+      fill_solid(leds, NUM_LEDS, CRGB::Blue);
+    else if(currentItem == 2)
+      fill_solid(leds, NUM_LEDS, CRGB::Green);
+    FastLED.show();
+}
