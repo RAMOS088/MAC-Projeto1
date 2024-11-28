@@ -9,6 +9,8 @@
 #define TFT_MOSI   13
 #define TFT_SCLK   14
 
+#define LED 16
+
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 unsigned long lastTimeStamp = 0;
 uint16_t corPersonalizada = tft.color565(128, 64, 200);
@@ -36,6 +38,7 @@ bool turn=false;
 bool jogo=false;
 bool clear = false;
 bool resetBall = false;
+bool start = false;
 
 char tabuleiro[3][3]={{'\0','\0 ','\0'},
 							        {'\0','\0','\0'},
@@ -214,6 +217,7 @@ void onDisConnect(){
 
 void setup() {
   Serial.begin(115200);
+  pinMode(LED, OUTPUT);
   ps5.attachOnConnect(onConnect);
   ps5.attachOnDisconnect(onDisConnect);
   ps5.begin("D0:BC:C1:63:5C:B2");  //your PS5 controller mac address 
@@ -229,16 +233,24 @@ void setup() {
   navigateMenu(NULL);
 }
 
+unsigned long previousMillis = 0;
+bool ledState = true;
 
 void loop() {
-  Serial.println(currentItem);
+  //Serial.println(currentItem);
+  if (millis() - previousMillis >= 2000) {
+    previousMillis = millis();    // Update the timer
+    ledState = !ledState;         // Toggle the LED state
+    digitalWrite(LED, ledState);  // Apply the new state
+  }
+
   if (buttonPressedUp()) {
     navigateMenu(-1);
   } 
-  if (buttonPressedDown()) {
+  else if (buttonPressedDown()) {
     navigateMenu(1);
   }
-  if (buttonPressedCross()) {
+  else if (buttonPressedCross()) {
     Serial.println(currentItem);
     if(m == 0 && currentItem == 1){
       m=1;
@@ -285,9 +297,11 @@ void loop() {
 
 
     else if(m==3 && currentItem == 0){
+      start = true;
       m=4;
     }
     else if(m==3 && currentItem == 2){
+      start = true;
       m=5;
     }
     
@@ -295,7 +309,7 @@ void loop() {
     navigateMenu(0);
   }
 
-  if(buttonPressedCircle()){
+  else if(buttonPressedCircle()){
 
     if(m == 1){
       m=0;
@@ -307,6 +321,9 @@ void loop() {
       m=0;
     }
     currentItem = 0; 
+    navigateMenu(0);
+  }
+  if (m == 5 || m == 4){
     navigateMenu(0);
   }
 }
@@ -500,120 +517,121 @@ void navigateMenu(int direction) {
 }
 
 void jogoDoGalo(){
-  jogo=true;
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setTextColor(ST77XX_GREEN);
+  if(start){
+    tft.fillScreen(ST77XX_BLACK);
+    tft.setTextColor(ST77XX_GREEN);
+    tft.setTextSize(2);
+    start = false;
+  }
   tft.setTextSize(2);
-  while(jogo){
-    Serial.print("X: ");
-    Serial.print(galoX);
-    Serial.print(" Y: ");
-    Serial.println(galoY);
+  Serial.print("X: ");
+  Serial.print(galoX);
+  Serial.print(" Y: ");
+  Serial.println(galoY);
 
-    tft.drawLine(65,109,65,19,ST77XX_WHITE);
-    tft.drawLine(95,109,95,19,ST77XX_WHITE);
+  tft.drawLine(65,109,65,19,ST77XX_WHITE);
+  tft.drawLine(95,109,95,19,ST77XX_WHITE);
 
-    tft.drawLine(35,79,125,79,ST77XX_WHITE);
-    tft.drawLine(35,49,125,49,ST77XX_WHITE);
-    if(buttonPressedUp()){
-      galoY = galoY - 1;
-      clear = !clear;
-    }
+  tft.drawLine(35,79,125,79,ST77XX_WHITE);
+  tft.drawLine(35,49,125,49,ST77XX_WHITE);
 
-    else if(buttonPressedDown()){
-      galoY = galoY + 1;
-      clear = !clear;
-    }
+  if(buttonPressedUp()){
+    galoY = galoY - 1;
+    clear = !clear;
+  }
 
-    else if(buttonPressedRight()){
-      galoX = galoX + 1;
-      clear = !clear;
-    }
-    else if(buttonPressedLeft()){
-      galoX = galoX - 1;
-      clear = !clear;
-    }
+  else if(buttonPressedDown()){
+    galoY = galoY + 1;
+    clear = !clear;
+  }
 
-    if(galoX==3){
-      galoX=0;
-    }
-    else if (galoX == -1){
-      galoX=2;
-    }
-    if(galoY==3){
-      galoY=0;
-    }
-    else if (galoY == -1){
-      galoY=2;
-    }
+  else if(buttonPressedRight()){
+    galoX = galoX + 1;
+    clear = !clear;
+  }
+  else if(buttonPressedLeft()){
+    galoX = galoX - 1;
+    clear = !clear;
+  }
 
-    if(turn){
-      printTabuleiro();
-      tft.setTextColor(ST77XX_BLUE);
-      tft.print("O"); 
-      tft.setTextColor(ST77XX_GREEN);
-      if(buttonPressedCross()){
-        if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
-            tft.fillScreen(ST77XX_BLACK);
-            tft.setCursor(50,34);
-            tft.print("Espaço Ocupado");
-            clear=!clear;
-            delay(2000);
-        }
-        else{
-        tabuleiro[galoX][galoY]='O';
-        turn = !turn;
-        }
+  if(galoX==3){
+    galoX=0;
+  }
+  else if (galoX==-1){
+    galoX=2;
+  }
+  if(galoY==3){
+    galoY=0;
+  }
+  else if (galoY == -1){
+    galoY=2;
+  }
+
+  if(turn){
+    printTabuleiro();
+    tft.setTextColor(ST77XX_BLUE);
+    tft.print("O"); 
+    tft.setTextColor(ST77XX_GREEN);
+    if(buttonPressedCross()){
+      if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
+          tft.fillScreen(ST77XX_BLACK);
+          tft.setCursor(50,34);
+          tft.print("Espaço Ocupado");
+          clear=!clear;
+          delay(2000);
       }
-    }
-    else if(!turn){
-      printTabuleiro();
-      tft.setTextColor(ST77XX_BLUE);
-      tft.print("X"); 
-      tft.setTextColor(ST77XX_GREEN);
-      if(buttonPressedCross()){
-        if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
-            tft.fillScreen(ST77XX_BLACK);
-            tft.setCursor(50,34);
-            tft.setTextSize(1);
-            tft.print("Espaço Ocupado");
-            tft.setTextSize(2);
-            clear=!clear;
-            delay(2000);
-        }
-        else{
-        tabuleiro[galoX][galoY]='X';
-        turn = !turn;
-        }
+      else{
+      tabuleiro[galoX][galoY]='O';
+      turn = !turn;
       }
-    }
-    
-    if(verificaVitoria()){
-      jogo=false;
-      m=0;
-      currentItem=0;
-      turn = false;
-      for(int i = 0; i < 3; i++){
-        for(int j = 0; j < 3; j++){
-          tabuleiro[i][j]='\0';
-        }       
-      }
-      navigateMenu(0);
-    }
-
-    if(buttonPressedCircle()){
-      jogo=false;
-      m=0;
-      currentItem=0;
-      for(int i = 0; i < 3; i++){
-        for(int j = 0; j < 3; j++){
-          tabuleiro[i][j]='\0';
-        }       
-      }
-      navigateMenu(0);
     }
   }
-tft.setTextSize(1);
+  else if(!turn){
+    printTabuleiro();
+    tft.setTextColor(ST77XX_BLUE);
+    tft.print("X"); 
+    tft.setTextColor(ST77XX_GREEN);
+    if(buttonPressedCross()){
+      if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
+          tft.fillScreen(ST77XX_BLACK);
+          tft.setCursor(50,34);
+          tft.setTextSize(1);
+          tft.print("Espaço Ocupado");
+          tft.setTextSize(2);
+          clear=!clear;
+          delay(2000);
+      }
+      else{
+      tabuleiro[galoX][galoY]='X';
+      turn = !turn;
+      }
+    }
+  }
+  
+  if(verificaVitoria()){
+    jogo=false;
+    m=0;
+    currentItem=0;
+    turn = false;
+    for(int i = 0; i < 3; i++){
+      for(int j = 0; j < 3; j++){
+        tabuleiro[i][j]='\0';
+      }       
+    }
+    navigateMenu(0);
+  }
+
+  if(buttonPressedCircle()){
+    jogo=false;
+    m=0;
+    currentItem=0;
+    for(int i = 0; i < 3; i++){
+      for(int j = 0; j < 3; j++){
+        tabuleiro[i][j]='\0';
+      }       
+    }
+    navigateMenu(0);
+  }
 }
 
 
@@ -669,117 +687,120 @@ bool verificaVitoria(){
 }
 
 void pong(){
-  jogo = true;
-  printCampo();
-  printScore();
-  printTracos();
-  printJogador1();
-  printJogador2();
-  ball_x = random(45, 50);
-  ball_y = random(23, 33);
-  ball_update = millis(); 
-  lastDebounceTime = millis();  
-  while(jogo){
-    if(resetBall){
-      tft.fillScreen(ST77XX_BLACK);
-      printCampo();
-      printScore();
+  if(start){
+    Serial.println("comecar");
+    printCampo();
+    printScore();
+    printTracos();
+    printJogador1();
+    printJogador2();
+    ball_x = random(45, 50);
+    ball_y = random(23, 33);
+    ball_update = millis(); 
+    lastDebounceTime = millis(); 
+    start = false;
+  }
+  if(resetBall){
+    Serial.println("eiiiiiii");
+    tft.fillScreen(ST77XX_BLACK);
+    printCampo();
+    printScore();
+    printTracos();
+    ball_x = random(45, 50);
+    ball_y = random(23, 33);
+    ball_dir_x = 1;
+    ball_dir_y = 1;
+    resetBall = false;
+    ball_update = millis();
+    printJogador1();
+    printJogador2();
+  }
+  else{
+    Serial.println("sodufhdosuf");
+    if((millis()-ball_update) > 20){
       printTracos();
-      ball_x = random(45, 50);
-      ball_y = random(23, 33);
-      ball_dir_x = 1;
-      ball_dir_y = 1;
-      resetBall = false;
       ball_update = millis();
+      int new_x = ball_x + ball_dir_x;
+      int new_y = ball_y + ball_dir_y;
+
+      if(score1 == 10 || score2 == 10){
+        score1 = 0;
+        score2 = 0;
+        resetBall = true;
+      }
+      if  (new_x == 0) {
+        score2++;
+        resetBall = true;
+      }
+      if  (new_x == 160) {
+        score1++;
+        resetBall = true;
+      }
+
+      if(new_y == 17 || new_y == 127){
+        ball_dir_y = -ball_dir_y;
+        new_y = new_y + (ball_dir_y + ball_dir_y);
+      }
+
+      if (new_x == 157 && new_y <= altura2Y && new_y >=  altura2Y - raquete) {
+        ball_dir_x = -ball_dir_x;
+        new_x += ball_dir_x + ball_dir_x;
+      }
+
+      if (new_x == 3 && new_y <= altura1Y && new_y >=  altura1Y - raquete) {
+        ball_dir_x = -ball_dir_x;
+        new_x += ball_dir_x + ball_dir_x;
+      }
+
+
+      tft.drawPixel(ball_x,  ball_y, ST77XX_BLACK);
+      tft.drawPixel(new_x, new_y, ST77XX_WHITE);
+      ball_x = new_x;
+      ball_y = new_y;
+    }
+
+    if(ps5.L2() == HIGH && (millis()-lastDebounceTime)>50){
+      lastDebounceTime = millis();
+      altura1Y+=10;
+      if(altura1Y > 126){
+        altura1Y = 126;
+      }
       printJogador1();
+    }
+    if(ps5.L1() == HIGH && (millis()-lastDebounceTime)>50){
+      lastDebounceTime = millis() ;
+      altura1Y-=10;
+      if(altura1Y < 21){
+        altura1Y = 21;
+      }
+
+      printJogador1();
+    }
+
+    if(ps5.R2() == HIGH && (millis()-lastDebounceTime)>50){
+      lastDebounceTime = millis() ;
+      altura2Y+=10;
+      if(altura2Y > 126){
+        altura2Y = 126;
+      }
+      printJogador2();
+
+    }
+    if(ps5.R1() == HIGH && (millis()-lastDebounceTime)>50){
+      lastDebounceTime = millis();
+      altura2Y-=10;
+      if(altura2Y < 21){
+        altura2Y = 21;
+      }
+
       printJogador2();
     }
-    else{
-      if((millis()-ball_update) > 20){
-        printTracos();
-        ball_update = millis();
-        int new_x = ball_x + ball_dir_x;
-        int new_y = ball_y + ball_dir_y;
 
-        if(score1 == 10 || score2 == 10){
-          score1 = 0;
-          score2 = 0;
-          resetBall = true;
-        }
-        if  (new_x == 0) {
-          score2++;
-          resetBall = true;
-        }
-        if  (new_x == 160) {
-          score1++;
-          resetBall = true;
-        }
-
-        if(new_y == 17 || new_y == 127){
-          ball_dir_y = -ball_dir_y;
-          new_y = new_y + (ball_dir_y + ball_dir_y);
-        }
-
-        if (new_x == 157 && new_y <= altura2Y && new_y >=  altura2Y - raquete) {
-          ball_dir_x = -ball_dir_x;
-          new_x += ball_dir_x + ball_dir_x;
-        }
-
-        if (new_x == 3 && new_y <= altura1Y && new_y >=  altura1Y - raquete) {
-          ball_dir_x = -ball_dir_x;
-          new_x += ball_dir_x + ball_dir_x;
-        }
-
-
-        tft.drawPixel(ball_x,  ball_y, ST77XX_BLACK);
-        tft.drawPixel(new_x, new_y, ST77XX_WHITE);
-        ball_x = new_x;
-        ball_y = new_y;
-      }
-
-      if(ps5.L2() == HIGH && (millis-lastDebounceTime)<20){
-        lastDebounceTime = millis();
-        altura1Y+=10;
-        if(altura1Y > 126){
-          altura1Y = 126;
-        }
-        printJogador1();
-      }
-      if(ps5.L1() == HIGH && (millis-lastDebounceTime)<20){
-        lastDebounceTime = millis() ;
-        altura1Y-=10;
-        if(altura1Y < 21){
-          altura1Y = 21;
-        }
-
-        printJogador1();
-      }
-
-      if(ps5.R2() == HIGH && (millis-lastDebounceTime)<20){
-        lastDebounceTime = millis() ;
-        altura2Y+=10;
-        if(altura2Y > 126){
-          altura2Y = 126;
-        }
-        printJogador2();
-
-      }
-      if(ps5.R1() == HIGH && (millis-lastDebounceTime)<20){
-        lastDebounceTime = millis();
-        altura2Y-=10;
-        if(altura2Y < 21){
-          altura2Y = 21;
-        }
-
-        printJogador2();
-      }
-
-      if(buttonPressedCircle()){
-        m=0;
-        jogo = false;
-        currentItem = 0;
-        navigateMenu(0);
-      }
+    if(buttonPressedCircle()){
+      m=0;
+      jogo = false;
+      currentItem = 0;
+      navigateMenu(0);
     }
   }
 }
@@ -815,5 +836,4 @@ void printJogador2() {
   tft.drawLine(157, altura2Y, 157, altura2Y - raquete, ST77XX_WHITE);
   lastAltura2Y = altura2Y;
 }
-
 
