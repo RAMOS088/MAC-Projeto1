@@ -44,11 +44,18 @@ int ball_dir_x = 1 ,ball_dir_y = 1;
 int new_x = 1 ,new_y = 1;
 int ball_update;
 int score1 = 0, score2 = 0;
+int snakeX[100], snakeY[100];  // Coordenadas do Snake
+int snakeLength = 3;           // Tamanho inicial do Snake
+int foodX, foodY;              // Coordenadas da comida
+int direction = 0; 
+
+            // Direção do Snake: 0=Up, 1=Right, 2=Down, 3=Left
 bool turn=false;
 bool jogo=false;
 bool clear = false;
 bool resetBall = false;
 bool start = false;
+bool isGameOver = false;
 
 char tabuleiro[3][3]={{'\0','\0 ','\0'},
 							        {'\0','\0','\0'},
@@ -71,6 +78,7 @@ unsigned long lastDebounceTimeUp = 0, lastDebounceTimeDown = 0;
 unsigned long lastDebounceTimeRight = 0, lastDebounceTimeLeft = 0;
 unsigned long lastDebounceTimeR1 = 0, lastDebounceTimeR2 = 0;
 unsigned long lastDebounceTimeL1 = 0, lastDebounceTimeL2 = 0;
+unsigned long Debounce = 0;
 
 const unsigned long debounceDelay = 50;
 
@@ -310,6 +318,10 @@ void loop() {
       start = true;
       m=4;
     }
+    else if(m==3 && currentItem == 1){
+      start = true;
+      m=7;
+    } 
     else if(m==3 && currentItem == 2){
       start = true;
       m=5;
@@ -340,7 +352,7 @@ void loop() {
     navigateMenu(0);
   }
 
-  if (m == 5 || m == 4){
+  if (m == 4 || m == 5 || m == 7){
     navigateMenu(0);
   }
 }
@@ -553,6 +565,11 @@ void navigateMenu(int direction) {
       }
       tft.setCursor(100,100);
     break;  
+    }
+
+    case 7:{
+      snake();
+    break;
     }
   }
 }
@@ -883,4 +900,115 @@ void p(){
     else if(currentItem == 2)
       fill_solid(leds, NUM_LEDS, CRGB::Green);
     FastLED.show();
+}
+
+
+void snake(){
+  if(start){
+    jogo=true;
+    tft.fillScreen(ST77XX_BLACK);
+    tft.setTextColor(ST77XX_GREEN);
+    tft.setTextSize(2);
+    // Inicializa variáveis do jogo Snake
+    resetSnakeGame();
+    Debounce = millis();
+    start = false;
+  }
+  if (isGameOver) {
+    tft.fillScreen(ST77XX_RED);
+    tft.setCursor(30, 50);
+    tft.setTextColor(ST77XX_WHITE);
+    tft.print("Game Over");
+    delay(1000);
+    resetSnakeGame();
+    m = 0;  
+  }
+  // Verifica controles
+  if (ps5.Up() == HIGH && direction != 2) direction = 0;
+  if (ps5.Right() == HIGH && direction != 3) direction = 1;
+  if (ps5.Down() == HIGH && direction != 0) direction = 2;
+  if (ps5.Left() == HIGH && direction != 1) direction = 3;
+
+  // Sai do jogo se o botão Circle for pressionado
+  if (ps5.Circle() == HIGH) {
+    jogo = false;
+    m = 0;
+    currentItem = 0;
+  }
+  if ((millis() - Debounce) > 150){
+      Debounce = millis();
+      // Atualiza a posição do Snake
+      updateSnake();
+      // Renderiza o Snake
+      drawSnake();
+  }
+  
+}
+          
+        
+
+void resetSnakeGame(){
+  snakeLength = 3;
+  snakeX[0] = 5;
+  snakeY[0] = 5;
+  for (int i = 1; i < snakeLength; i++) {
+    snakeX[i] = snakeX[0] - i;
+    snakeY[i] = snakeY[0];
+  }
+  spawnFood();
+  isGameOver = false;
+} 
+
+
+void updateSnake() {
+  // Move o corpo do Snake
+  for (int i = snakeLength - 1; i > 0; i--) {
+    snakeX[i] = snakeX[i - 1];
+    snakeY[i] = snakeY[i - 1];
+    isGameOver = false;
+  }
+
+  // Move a cabeça do Snake
+  if (direction == 0) snakeY[0]--; // cima
+  if (direction == 1) snakeX[0]++; // direita
+  if (direction == 2) snakeY[0]++; // baixo
+  if (direction == 3) snakeX[0]--; // esquerda
+
+  // Verifica se bate nas bordas
+  if(snakeX[0] == 0 ){
+    isGameOver = true;
+  }
+  if (snakeX[0] >19  || snakeY[0] < 0 || snakeY[0] > 16) {
+    isGameOver = true;
+  }
+
+  // Verifica se bate na snake
+  for (int i = 1; i < snakeLength; i++) {
+    if (snakeX[0] == snakeX[i] && snakeY[0] == snakeY[i]) {
+      isGameOver = true;
+    }
+  }
+  // Verifica se comeu a comida
+  if (snakeX[0] == foodX && snakeY[0] == foodY) {
+    snakeLength++;
+    spawnFood();
+    isGameOver = false;
+  }
+}
+
+void drawSnake() {
+  tft.fillScreen(ST77XX_BLACK);
+
+  // Desenha a comida
+  tft.fillRect(foodX * 8, foodY * 8, 8, 8, ST77XX_RED);
+
+  // Desenha o Snake
+  for (int i = 0; i < snakeLength; i++) {
+    tft.fillRect(snakeX[i] * 8, snakeY[i] * 8, 8, 8, ST77XX_GREEN);
+  }
+}
+
+void spawnFood() {
+  foodX = random(0, 16);
+  foodY = random(0, 16);
 }
