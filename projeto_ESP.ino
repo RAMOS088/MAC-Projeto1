@@ -10,13 +10,12 @@
 #define TFT_MOSI   13
 #define TFT_SCLK   14
 
-#include <FastLED.h>
-
 #define LED_PIN     16       // Pin where the LED data line is connected
 #define NUM_LEDS    120      // Number of LEDs in your strip
-#define BRIGHTNESS  255     // Brightness (0 to 255)
+#define BRIGHTNESS  100     // Brightness (0 to 255)
 #define LED_TYPE    WS2812 // Type of LEDs (e.g., WS2812B, WS2811, APA102)
 #define COLOR_ORDER GRB     // Color order (GRB is common for WS2812B)
+#define POT_PIN     34
 
 CRGB leds[NUM_LEDS];   
 
@@ -48,6 +47,11 @@ int snakeX[100], snakeY[100];  // Coordenadas do Snake
 int snakeLength = 3;           // Tamanho inicial do Snake
 int foodX, foodY;              // Coordenadas da comida
 int direction = 0; 
+int currentEffect=0;
+int hue = 0;
+int brightness =0;
+int delta = 5;
+int cor = 0;
 
             // Direção do Snake: 0=Up, 1=Right, 2=Down, 3=Left
 bool turn=false;
@@ -256,8 +260,10 @@ void setup() {
 
 void loop() {
   //Serial.println(currentItem);
-
-  p();
+  if(hue==256){
+    hue = 0;
+  }
+  effect();
 
   if (buttonPressedUp()) {
     navigateMenu(-1);
@@ -326,7 +332,39 @@ void loop() {
       start = true;
       m=5;
     }
-    
+
+    else if(m==6 && currentItem == 0){
+      currentEffect = 0;
+      currentItem = 0;
+    }
+    else if(m==6 && currentItem == 1){
+      currentEffect = 1;
+      currentItem = 1;
+    }
+    else if(m==6 && currentItem == 2){
+      currentEffect = 2;
+      currentItem = 2;
+    }
+    else if(m==6 && currentItem == 3){
+      currentEffect = 3;
+      currentItem = 3;
+    }
+    else if(m==6 && currentItem == 4){
+      currentEffect = 4;
+      currentItem = 4;
+      Debounce = millis();
+    }
+    else if(m==6 && currentItem == 5){
+      currentEffect = 5;
+      m = 8;
+    }
+    else if(m==8 && currentItem == 0){
+      cor = hue;
+      m = 6;
+    }
+    else if(m==8 && currentItem == 1){
+      m = 6;
+    }
     currentItem = 0; 
     navigateMenu(0);
   }
@@ -546,29 +584,65 @@ void navigateMenu(int direction) {
     case 6:{
       tft.setTextSize(1);
       tft.fillScreen(ST77XX_BLACK);
-      String menuItems[] = {"Vermelho", "Verde", "Azul"};
+      String menuItems[] = {"Vermelho", "Verde", "Azul","Arco-Iris","Respiracao","Custom"};
       currentItem = currentItem + direction;
+      if(currentItem >=0 && currentItem <= 4){
+        if(currentItem == 5)
+          currentItem = 0;
+        else if(currentItem == -1)
+          currentItem = 2;
 
-      if(currentItem == 3)
-        currentItem = 0;
-      else if(currentItem == -1)
-        currentItem = 2;
-
-      for (int i = 0; i < 3; i++) {  
-        if (i == currentItem) {
-          tft.setTextColor(ST77XX_GREEN);  
-        } else {
-          tft.setTextColor(ST77XX_WHITE);
+        for (int i = 0; i < 5; i++) {  
+          if (i == currentItem) {
+            tft.setTextColor(ST77XX_GREEN);  
+          } else {
+            tft.setTextColor(ST77XX_WHITE);
+          }
+          tft.setCursor(20, 20 + i * 20);
+          tft.print(menuItems[i]);  
         }
-        tft.setCursor(20, 20 + i * 20);
-        tft.print(menuItems[i]);  
+        tft.setCursor(100,100);
       }
-      tft.setCursor(100,100);
+      else if(currentItem>=5){
+        /*
+        if(currentItem == 5)
+          currentItem = 0;
+        else if(currentItem == -1)
+          currentItem = 2;
+        */
+        for (int i = 5; i < 6; i++) {  
+          if (i == currentItem) {
+            tft.setTextColor(ST77XX_GREEN);  
+          } else {
+            tft.setTextColor(ST77XX_WHITE);
+          }
+          tft.setCursor(20, 20 + (i-5) * 20);
+          tft.print(menuItems[i]);  
+        }
+        tft.setCursor(100,100);
+      }
     break;  
     }
 
     case 7:{
       snake();
+    break;
+    }
+    case 8:{
+      tft.setTextSize(1);
+      tft.fillScreen(ST77XX_BLACK);
+      String menuItems[] = {"Salvar","Cancelar"};
+      currentItem = currentItem + direction;
+
+      for (int i = 0; i < 2; i++) {  
+        if (i == currentItem) {
+          tft.setTextColor(ST77XX_GREEN);
+        } else {
+          tft.setTextColor(ST77XX_WHITE);        
+        }
+        tft.setCursor(20, 20 + i * 20);
+        tft.print(menuItems[i]); 
+      }
     break;
     }
   }
@@ -891,18 +965,6 @@ void printJogador2() {
   tft.drawLine(157, altura2Y, 157, altura2Y - raquete, ST77XX_WHITE);
   lastAltura2Y = altura2Y;
 }
-
-void p(){
-    if(currentItem == 0)
-      fill_solid(leds, NUM_LEDS, CRGB::Red);
-    else if(currentItem == 1)
-      fill_solid(leds, NUM_LEDS, CRGB::Blue);
-    else if(currentItem == 2)
-      fill_solid(leds, NUM_LEDS, CRGB::Green);
-    FastLED.show();
-}
-
-
 void snake(){
   if(start){
     jogo=true;
@@ -1011,4 +1073,46 @@ void drawSnake() {
 void spawnFood() {
   foodX = random(0, 16);
   foodY = random(0, 16);
+}
+
+void effect(){
+  if(m==5){
+    int x = map(ball_x,0,160,21,46);
+    FastLED.clear();
+    leds[x] = CRGB::White;
+    FastLED.show();
+    return;
+  }
+
+  if(currentEffect == 0)
+    fill_solid(leds, NUM_LEDS, CRGB::Red);
+  else if(currentEffect == 1)
+    fill_solid(leds, NUM_LEDS, CRGB::Green);
+  else if(currentEffect == 2)
+    fill_solid(leds, NUM_LEDS, CRGB::Blue);
+  else if(currentEffect == 3){
+      fill_rainbow(leds, NUM_LEDS, hue, 7); // Fill the strip with a gradient
+      hue++;
+  }
+  else if(currentEffect==4){
+      if(millis()-Debounce > 20){
+        Debounce = millis();
+        brightness += delta;
+        if(brightness == 0 || brightness == 255) {
+          delta = -delta;
+        }
+      fill_solid(leds, NUM_LEDS, CHSV(cor, 255, 255));
+      FastLED.setBrightness(brightness);
+    }
+  }
+  else if(currentEffect==5){
+    int potValue = analogRead(POT_PIN);
+    potValue = potValue / 4;
+    hue = map(potValue, 0, 1023, 0, 255);
+    fill_solid(leds, NUM_LEDS, CHSV(hue, 255, 255));
+    
+
+  }
+  FastLED.show();
+
 }
