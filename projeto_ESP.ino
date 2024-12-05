@@ -52,6 +52,7 @@ int hue = 0;
 int brightness =0;
 int delta = 5;
 int cor = 0;
+int ledCobra = 0;
 
             // Direção do Snake: 0=Up, 1=Right, 2=Down, 3=Left
 bool turn=false;
@@ -83,6 +84,7 @@ unsigned long lastDebounceTimeRight = 0, lastDebounceTimeLeft = 0;
 unsigned long lastDebounceTimeR1 = 0, lastDebounceTimeR2 = 0;
 unsigned long lastDebounceTimeL1 = 0, lastDebounceTimeL2 = 0;
 unsigned long Debounce = 0;
+unsigned long ledDebounce = 0;
 
 const unsigned long debounceDelay = 50;
 
@@ -327,6 +329,7 @@ void loop() {
     else if(m==3 && currentItem == 1){
       start = true;
       m=7;
+      ledDebounce = millis();
     } 
     else if(m==3 && currentItem == 2){
       start = true;
@@ -1083,6 +1086,20 @@ void effect(){
     FastLED.show();
     return;
   }
+  if(m==7){
+  if(m==7 && (millis()-ledDebounce)>150){
+    if(ledCobra==90)
+      ledCobra = 0;
+
+    ledDebounce = millis();
+    FastLED.clear();
+    leds[ledCobra] = CRGB::White;
+    FastLED.show();
+    ledCobra++;
+  }
+      return;
+  }
+
 
   if(currentEffect == 0)
     fill_solid(leds, NUM_LEDS, CRGB::Red);
@@ -1110,8 +1127,6 @@ void effect(){
     potValue = potValue / 4;
     hue = map(potValue, 0, 1023, 0, 255);
     fill_solid(leds, NUM_LEDS, CHSV(hue, 255, 255));
-    
-
   }
   FastLED.show();
 
