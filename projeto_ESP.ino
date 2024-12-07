@@ -252,7 +252,7 @@ void setup() {
 
   SPI.begin(TFT_SCLK, -1, TFT_MOSI);
   tft.initR(INITR_GREENTAB);
-  tft.setRotation(3);
+  tft.setRotation(1);
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   navigateMenu(NULL);
