@@ -17,6 +17,12 @@
 #define COLOR_ORDER GRB     // Color order (GRB is common for WS2812B)
 #define POT_PIN     34
 
+#define b1  18
+#define b2  5
+#define b3  4
+#define b4  32
+
+
 CRGB leds[NUM_LEDS];   
 
 
@@ -249,7 +255,10 @@ void setup() {
     delay(300);
   }
   Serial.println("Ready.");
-
+  pinMode(b1, OUTPUT);
+  pinMode(b2, OUTPUT);
+  pinMode(b3, OUTPUT);
+  pinMode(b4, OUTPUT);
   SPI.begin(TFT_SCLK, -1, TFT_MOSI);
   tft.initR(INITR_GREENTAB);
   tft.setRotation(1);
@@ -275,7 +284,29 @@ void loop() {
   }
   else if (buttonPressedCross()) {
     Serial.println(currentItem);
-    if(m == 0 && currentItem == 1){
+
+    if(m == 0 && currentItem == 0){
+      analogWrite(b1, 255);
+      delay(2000);
+      analogWrite(b1, 0);
+      delay(2000);
+
+      analogWrite(b2, 255);
+      delay(2000);  
+      analogWrite(b2, 0);
+      delay(2000);
+
+      analogWrite(b3, 255);
+      delay(2000);
+      analogWrite(b3, 0);
+      delay(2000);
+
+      analogWrite(b4, 255);
+      delay(2000);
+      analogWrite(b4, 0);
+      delay(2000);
+    }
+    else if(m == 0 && currentItem == 1){
       m=1;
     }
     else if(m == 0 && currentItem == 2){
