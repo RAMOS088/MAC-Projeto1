@@ -35,6 +35,7 @@ int currentItem = 0;
 int m=0;
 int galoX = 0;
 int galoY = 0;
+int ronda = 0;
 int bolaX = 0;
 int bolaY = 0;
 int raquete = 20;
@@ -65,6 +66,7 @@ int quantidade = 5;
 unsigned long bebida1 = 0, bebida2 = 0, bebida3 = 0, bebida4 = 0;
 int copo = 0;
 unsigned long tempo1 = 0,tempo2 = 0,tempo3 = 0,tempo4 = 0;
+
 
 
             // Direção do Snake: 0=Up, 1=Right, 2=Down, 3=Left
@@ -286,6 +288,56 @@ void loop() {
   }
   effect();
 
+
+
+
+  if(m == 4){
+    if(buttonPressedUp()){
+      galoY = galoY - 1;
+      clear = !clear;
+    }
+
+    else if(buttonPressedDown()){
+      galoY = galoY + 1;
+      clear = !clear;
+    }
+
+    else if(buttonPressedRight()){
+      galoX = galoX + 1;
+      clear = !clear;
+    }
+    else if(buttonPressedLeft()){
+      galoX = galoX - 1;
+      clear = !clear;
+    }
+    if(buttonPressedCross()){
+      if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
+          tft.fillScreen(ST77XX_BLACK);
+          tft.setCursor(50,34);
+          tft.setTextSize(1);
+          tft.print("Espaço Ocupado");
+          tft.setTextSize(2);
+          clear=!clear;
+          delay(2000);
+      }
+      else{
+      if(!turn){
+        tabuleiro[galoX][galoY]='X';
+        turn = !turn;
+        ronda++;
+      }
+      else if(turn){
+        tabuleiro[galoX][galoY]='O';
+        turn = !turn;
+        ronda++;
+      }
+      }
+    }
+  }
+
+
+
+
   if (ps5.Up() == HIGH && m == 2) {
     if(millis()-menuDebounce >50){
       menuDebounce = millis();
@@ -448,8 +500,24 @@ void loop() {
     else if(m == 3){
       m=0;
     }
+    else if(m == 4){
+      start = true;
+      ronda = 0;
+      m=0;
+      currentItem=0;
+      turn = false;
+      for(int i = 0; i < 3; i++){
+        for(int j = 0; j < 3; j++){
+          tabuleiro[i][j]='\0';
+        }       
+      }
+    }
     else if(m == 5){
       m=0;
+      score1 = 0;
+      score2 = 0;
+      altura1Y = 53;
+      altura2Y = 53;
     }
     else if(m == 6){
       m=0;
@@ -556,7 +624,7 @@ void navigateMenu(int direction) {
         tft.print(quantidade);
         tft.println("  ml");
 
-        tft.setCursor(10, 120);
+        tft.setCursor(10, 110);
         tft.println("Precione X para confirmar");
     }
     break;
@@ -710,25 +778,6 @@ void jogoDoGalo(){
   tft.drawLine(35,79,125,79,ST77XX_WHITE);
   tft.drawLine(35,49,125,49,ST77XX_WHITE);
 
-  if(buttonPressedUp()){
-    galoY = galoY - 1;
-    clear = !clear;
-  }
-
-  else if(buttonPressedDown()){
-    galoY = galoY + 1;
-    clear = !clear;
-  }
-
-  else if(buttonPressedRight()){
-    galoX = galoX + 1;
-    clear = !clear;
-  }
-  else if(buttonPressedLeft()){
-    galoX = galoX - 1;
-    clear = !clear;
-  }
-
   if(galoX==3){
     galoX=0;
   }
@@ -747,44 +796,17 @@ void jogoDoGalo(){
     tft.setTextColor(ST77XX_BLUE);
     tft.print("O"); 
     tft.setTextColor(ST77XX_GREEN);
-    if(buttonPressedCross()){
-      if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
-          tft.fillScreen(ST77XX_BLACK);
-          tft.setCursor(50,34);
-          tft.print("Espaço Ocupado");
-          clear=!clear;
-          delay(2000);
-      }
-      else{
-      tabuleiro[galoX][galoY]='O';
-      turn = !turn;
-      }
-    }
   }
   else if(!turn){
     printTabuleiro();
     tft.setTextColor(ST77XX_BLUE);
     tft.print("X"); 
     tft.setTextColor(ST77XX_GREEN);
-    if(buttonPressedCross()){
-      if(tabuleiro[galoX][galoY]=='X'|| tabuleiro[galoX][galoY]=='O'){
-          tft.fillScreen(ST77XX_BLACK);
-          tft.setCursor(50,34);
-          tft.setTextSize(1);
-          tft.print("Espaço Ocupado");
-          tft.setTextSize(2);
-          clear=!clear;
-          delay(2000);
-      }
-      else{
-      tabuleiro[galoX][galoY]='X';
-      turn = !turn;
-      }
-    }
   }
   
   if(verificaVitoria()){
-    jogo=false;
+    ronda = 0;
+    start = true;
     m=0;
     currentItem=0;
     turn = false;
@@ -794,6 +816,21 @@ void jogoDoGalo(){
       }       
     }
     navigateMenu(0);
+    return;
+  }
+  if(ronda == 9){
+    start = true;
+    ronda = 0;
+    m=0;
+    currentItem=0;
+    turn = false;
+    for(int i = 0; i < 3; i++){
+      for(int j = 0; j < 3; j++){
+        tabuleiro[i][j]='\0';
+      }       
+    }
+    navigateMenu(0);
+    return;
   }
 
   if(buttonPressedCircle()){
@@ -806,6 +843,7 @@ void jogoDoGalo(){
       }       
     }
     navigateMenu(0);
+    return;
   }
 }
 
@@ -942,8 +980,8 @@ void pong(){
     if(ps5.L1() == HIGH && (millis()-lastDebounceTime)>50){
       lastDebounceTime = millis() ;
       altura1Y-=10;
-      if(altura1Y < 21){
-        altura1Y = 21;
+      if(altura1Y < 37){
+        altura1Y = 37;
       }
 
       printJogador1();
@@ -961,8 +999,8 @@ void pong(){
     if(ps5.R1() == HIGH && (millis()-lastDebounceTime)>50){
       lastDebounceTime = millis();
       altura2Y-=10;
-      if(altura2Y < 21){
-        altura2Y = 21;
+      if(altura2Y < 37){
+        altura2Y = 37;
       }
 
       printJogador2();
@@ -1190,28 +1228,26 @@ void encherCopo(){
   tft.setCursor(20,10);
   tft.print("Aguarde...");
 
-  tempo1 = bebida1 * 0.044;
+  tempo1 = bebida1 * 0.044 * 1000;
   analogWrite(b1, 255);
-  delay(600);
-  delay(tempo1*1000);
   analogWrite(b1, 0);
-  delay(50);
 
-  tempo2 = bebida2 * 0.047;
+
+  tempo2 = bebida2 * 0.047* 1000;
   analogWrite(b2, 255);
-  delay(tempo1*1000);
+  delay(tempo1);
   analogWrite(b2, 0);
   delay(50);
 
-  tempo3 = bebida3 * 0.007;
+  tempo3 = bebida3 * 0.007* 1000;
   analogWrite(b3, 255);
-  delay(tempo1*1000);
+  delay(tempo1);
   analogWrite(b3, 0);
   delay(50);
 
-  tempo4 = bebida4 * 0.045;
+  tempo4 = bebida4 * 0.045* 1000;
   analogWrite(b4, 255);
-  delay(tempo1*1000);
+  delay(tempo1);
   analogWrite(b4, 0);
   delay(50);
 
