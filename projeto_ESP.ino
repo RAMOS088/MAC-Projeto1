@@ -17,10 +17,10 @@
 #define COLOR_ORDER GRB     // Color order (GRB is common for WS2812B)
 #define POT_PIN     34
 
-#define b1  18
-#define b2  5
-#define b3  4
-#define b4  32
+#define b1  5
+#define b2  18
+#define b3  32
+#define b4  4
 
 
 CRGB leds[NUM_LEDS];   
@@ -31,7 +31,6 @@ unsigned long lastTimeStamp = 0;
 uint16_t corPersonalizada = tft.color565(128, 64, 200);
 
 
-int totalDrink=0;
 int currentItem = 0;
 int m=0;
 int galoX = 0;
@@ -49,9 +48,11 @@ int ball_dir_x = 1 ,ball_dir_y = 1;
 int new_x = 1 ,new_y = 1;
 int ball_update;
 int score1 = 0, score2 = 0;
-int snakeX[100], snakeY[100];  // Coordenadas do Snake
-int snakeLength = 3;           // Tamanho inicial do Snake
-int foodX, foodY;              // Coordenadas da comida
+int snakeX[100], snakeY[100];
+int oldSnakeX[100],oldSnakeY[100]; 
+int snakeLength = 3;
+int foodX, foodY; 
+int score = 0;         
 int direction = 0; 
 int currentEffect=0;
 int hue = 0;
@@ -59,6 +60,12 @@ int brightness =0;
 int delta = 5;
 int cor = 0;
 int ledCobra = 0;
+int capicidadeMax = 4000;
+int quantidade = 5;
+unsigned long bebida1 = 0, bebida2 = 0, bebida3 = 0, bebida4 = 0;
+int copo = 0;
+unsigned long tempo1 = 0,tempo2 = 0,tempo3 = 0,tempo4 = 0;
+
 
             // Direção do Snake: 0=Up, 1=Right, 2=Down, 3=Left
 bool turn=false;
@@ -91,6 +98,9 @@ unsigned long lastDebounceTimeR1 = 0, lastDebounceTimeR2 = 0;
 unsigned long lastDebounceTimeL1 = 0, lastDebounceTimeL2 = 0;
 unsigned long Debounce = 0;
 unsigned long ledDebounce = 0;
+unsigned long menuDebounce = 0;
+unsigned long bebidaDebounce = 0;
+unsigned long debounceTime = 0;
 
 const unsigned long debounceDelay = 50;
 
@@ -265,46 +275,40 @@ void setup() {
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   navigateMenu(NULL);
+  menuDebounce = millis();
 }
 
 
 
 void loop() {
-  //Serial.println(currentItem);
   if(hue==256){
     hue = 0;
   }
   effect();
 
-  if (buttonPressedUp()) {
-    navigateMenu(-1);
+  if (ps5.Up() == HIGH && m == 2) {
+    if(millis()-menuDebounce >50){
+      menuDebounce = millis();
+      navigateMenu(-1);
+    }
   } 
-  else if (buttonPressedDown()) {
+  else if (ps5.Down() == HIGH && m == 2) {
+    if(millis()-menuDebounce >50){
+      menuDebounce = millis();
+      navigateMenu(1);
+    }
+  }
+  else if(buttonPressedUp()){
+    navigateMenu(-1);
+  }
+  else if(buttonPressedDown()){
     navigateMenu(1);
   }
   else if (buttonPressedCross()) {
     Serial.println(currentItem);
 
     if(m == 0 && currentItem == 0){
-      analogWrite(b1, 255);
-      delay(2000);
-      analogWrite(b1, 0);
-      delay(2000);
-
-      analogWrite(b2, 255);
-      delay(2000);  
-      analogWrite(b2, 0);
-      delay(2000);
-
-      analogWrite(b3, 255);
-      delay(2000);
-      analogWrite(b3, 0);
-      delay(2000);
-
-      analogWrite(b4, 255);
-      delay(2000);
-      analogWrite(b4, 0);
-      delay(2000);
+      m = 10;
     }
     else if(m == 0 && currentItem == 1){
       m=1;
@@ -316,42 +320,58 @@ void loop() {
       m=6;
     }
 
-    else if(m==1 && currentItem == 0){
-      m = 2;
+    else if(m == 1 && currentItem == 0){
+      m=2;
+      copo = 1;
     }
-    else if(m==1 && currentItem == 1){
-      m = 2;
+    else if(m == 1 && currentItem == 1){
+      m=2;
+      copo = 2;
     }
-    else if(m==1 && currentItem == 2){
-      m = 2;
+    else if(m == 1 && currentItem == 2){
+      m=2;      
+      copo = 3;
     }
-    else if(m==1 && currentItem == 3){
-      m = 2;
+    else if(m == 1 && currentItem == 3){
+      m=2;
+      copo = 4;
     }
-
-
-    else if(m == 2 && currentItem == 0){
-      m=1;
-      totalDrink = totalDrink + 1;
+    else if(m == 1 && currentItem == 4){
+      m = 9;
+      bebidaDebounce = millis();
     }
-    else if(m == 2 && currentItem == 1){
-      m=1;
-      totalDrink = totalDrink + 2;
-    }
-    else if(m == 2 && currentItem == 2){
-      m=1;
-      totalDrink = totalDrink + 3;
-    }
-    else if(m == 2 && currentItem == 3){
-      m=1;
-      totalDrink = 4;
-    }
-    else if(m == 2 && currentItem == 4){
-      totalDrink = 0;
-      m=1;
+    else if(m == 1 && currentItem == 5){
+      bebida1 = 0;
+      bebida2 = 0;
+      bebida3 = 0;
+      bebida4 = 0;
+      tempo1 = 0;
+      tempo2 = 0;
+      tempo3 = 0;
+      tempo4 = 0;
+      m=0;
     }
 
-
+    else if(m == 2 && copo == 1){
+      bebida1 = quantidade;
+      m = 1;
+      quantidade = 0;
+    }
+    else if(m == 2 && copo == 2){
+      bebida2 = quantidade;
+      m = 1;
+      quantidade = 0;
+    }
+    else if(m == 2 && copo == 3){
+      bebida3 = quantidade;
+      m = 1;
+      quantidade = 0;
+    }
+    else if(m == 2 && copo == 4){
+    bebida4 = quantidade;
+    m = 1;
+    quantidade = 0;
+    }
 
     else if(m==3 && currentItem == 0){
       start = true;
@@ -399,6 +419,20 @@ void loop() {
     else if(m==8 && currentItem == 1){
       m = 6;
     }
+
+    else if(m==10 && currentItem == 0){
+     shotRefrigerante();
+     m=0;
+    }
+    else if(m==10 && currentItem == 1){
+      tracadinho();
+      m=0;
+    }
+    else if(m==10 && currentItem == 2){
+      shot();
+      m=0;
+    }
+
     currentItem = 0; 
     navigateMenu(0);
   }
@@ -418,6 +452,9 @@ void loop() {
       m=0;
     }
     else if(m == 6){
+      m=0;
+    }
+    else if(m == 10){
       m=0;
     }
     currentItem = 0; 
@@ -460,15 +497,23 @@ void navigateMenu(int direction) {
 
     case 1:{
       tft.fillScreen(ST77XX_BLACK);
-      String menuItems1[] = {"Bebida 1", "Bebida 2", "Bebida 3", "Bebida 4"};
+      String menuItems1[] = {"Bebida 1", "Bebida 2", "Bebida 3", "Bebida 4","Encher Copo","RESET bebida"};
       currentItem = currentItem + direction;
 
-      if(currentItem == 5)
+      if(currentItem == 7)
         currentItem = 0;
       else if(currentItem == -1)
-        currentItem = 4;
+        currentItem = 6;
 
-      for (int i = 0; i < 4; i++) {  
+      tft.setCursor(100, 20);
+      int bebidaTotal = bebida1 + bebida2 + bebida3 + bebida4;
+      Serial.println(bebida1);
+      Serial.println(bebida2);
+      Serial.println(bebida3);
+      Serial.println(bebida4);
+      tft.print(bebidaTotal);
+      tft.print(" ml;");
+      for (int i = 0; i < 6; i++) {  
         if (i == currentItem) {
           tft.setTextColor(ST77XX_GREEN);
         } else {
@@ -477,108 +522,43 @@ void navigateMenu(int direction) {
         tft.setCursor(20, 20 + i * 20);
         tft.print(menuItems1[i]); 
       }
-      tft.setCursor(100,100);
-      tft.print("Menu 1");
     break;
     }
     case 2:{
-      int x=0;
-      tft.fillScreen(ST77XX_BLACK);
-      tft.setCursor(20, 10);
-      tft.print("Quantidade:");
-      String menuItems2[] = {"1/4", "2/4", "3/4", "4/4","RESET"};
-      currentItem = currentItem + direction;
-
-      if(totalDrink == 0){
-        x=4;
-
-        if(currentItem == 6)
-          currentItem = 0;
-        else if(currentItem == -1)
-          currentItem = 4;
-        
-        for (int i = 0; i < x; i++) {  
-          if (i == currentItem) {
-            tft.setTextColor(ST77XX_GREEN);
-          } else {
-            tft.setTextColor(ST77XX_WHITE);
-          }
-          tft.setCursor(20, 20 + i * 20);
-          tft.print(menuItems2[i]);   
+      if((bebida1 + bebida2 + bebida3 + bebida4)>4000){
+        tft.fillScreen(ST77XX_BLACK);
+        tft.setCursor(20, 10);
+        tft.println("Quantidade de bebida");
+        tft.print("maxima atingida");
+      }
+      else{
+        tft.fillScreen(ST77XX_BLACK);
+        tft.setCursor(20, 10);
+        tft.println("Quantidade:");
+        tft.setCursor(20, 30);
+        tft.println("Quantidade maxima:");
+        tft.setCursor(20, 40);
+        tft.println("1000ml");
+        if(direction == 1){
+          direction = -5;
         }
-      }
-      else if(totalDrink == 1){
-        x=3;
-
-        if(currentItem == 6)
-          currentItem = 0;
-        else if(currentItem == -1)
-          currentItem = 4;
-        
-        for (int i = 0; i < x; i++) {  
-          if (i == currentItem) {
-            tft.setTextColor(ST77XX_GREEN);
-          } else {
-            tft.setTextColor(ST77XX_WHITE);
-          }
-          tft.setCursor(20, 20 + i * 20);
-          tft.print(menuItems2[i]);   
+        else if(direction == -1){
+          direction = 5;
         }
-      }
-      else if(totalDrink == 2){
-        x=2;
-
-        if(currentItem == 6)
-          currentItem = 0;
-        else if(currentItem == -1)
-          currentItem = 4;
-        
-        for (int i = 0; i < x; i++) {  
-          if (i == currentItem) {
-            tft.setTextColor(ST77XX_GREEN);
-          } else {
-            tft.setTextColor(ST77XX_WHITE);
-          }
-          tft.setCursor(20, 20 + i * 20);
-          tft.print(menuItems2[i]);   
+        quantidade = quantidade + direction;
+        if(quantidade == 1005){
+          quantidade = 0;
         }
-      }
-      else if(totalDrink == 3){
-        x=1;
-
-        if(currentItem == 6)
-          currentItem = 0;
-        else if(currentItem == -1)
-          currentItem = 4;
-        
-        for (int i = 0; i < x; i++) {  
-          if (i == currentItem) {
-            tft.setTextColor(ST77XX_GREEN);
-          } else {
-            tft.setTextColor(ST77XX_WHITE);
-          }
-          tft.setCursor(20, 20 + i * 20);
-          tft.print(menuItems2[i]);   
+        else if(quantidade < 0){
+          quantidade = 1000;
         }
-      }
-      else if(totalDrink == 4){
-        tft.setCursor(20,20);
-        tft.print("Copo cheio;");
-        
-      }
+        tft.setCursor(20, 60);
+        tft.print(quantidade);
+        tft.println("  ml");
 
-      for (int i = 4; i < 5; i++) {  
-        if (i == currentItem) {
-          tft.setTextColor(ST77XX_GREEN);
-        } else {
-          tft.setTextColor(ST77XX_WHITE);
-        }
-        tft.setCursor(20, 60 + i * 10);
-        tft.print(menuItems2[i]); 
-      }
-
-      tft.setCursor(100,100);
-      tft.print("Menu 2");
+        tft.setCursor(10, 120);
+        tft.println("Precione X para confirmar");
+    }
     break;
     }
     case 3:{
@@ -669,6 +649,35 @@ void navigateMenu(int direction) {
       currentItem = currentItem + direction;
 
       for (int i = 0; i < 2; i++) {  
+        if (i == currentItem) {
+          tft.setTextColor(ST77XX_GREEN);
+        } else {
+          tft.setTextColor(ST77XX_WHITE);        
+        }
+        tft.setCursor(20, 20 + i * 20);
+        tft.print(menuItems[i]); 
+      }
+    break;
+    }
+    case 9:{
+      tft.fillScreen(ST77XX_BLACK);
+      encherCopo();
+    break;
+    }
+
+    case 10:{
+      tft.setTextSize(1);
+      tft.fillScreen(ST77XX_BLACK);
+      String menuItems[] = {"Shot + Refrigerante","Tracadinho","Shot"};
+      currentItem = currentItem + direction;
+
+      if(currentItem == 3){
+        currentItem = 0;
+      }
+      else if(currentItem == -1){
+        currentItem = 2;
+      }
+      for (int i = 0; i < 3; i++) {  
         if (i == currentItem) {
           tft.setTextColor(ST77XX_GREEN);
         } else {
@@ -999,114 +1008,127 @@ void printJogador2() {
   tft.drawLine(157, altura2Y, 157, altura2Y - raquete, ST77XX_WHITE);
   lastAltura2Y = altura2Y;
 }
-void snake(){
-  if(start){
-    jogo=true;
-    tft.fillScreen(ST77XX_BLACK);
-    tft.setTextColor(ST77XX_GREEN);
-    tft.setTextSize(2);
-    // Inicializa variáveis do jogo Snake
-    resetSnakeGame();
-    Debounce = millis();
-    start = false;
-  }
-  if (isGameOver) {
-    tft.fillScreen(ST77XX_RED);
-    tft.setCursor(30, 50);
-    tft.setTextColor(ST77XX_WHITE);
-    tft.print("Game Over");
-    delay(1000);
-    resetSnakeGame();
-    m = 0;  
-  }
-  // Verifica controles
-  if (ps5.Up() == HIGH && direction != 2) direction = 0;
-  if (ps5.Right() == HIGH && direction != 3) direction = 1;
-  if (ps5.Down() == HIGH && direction != 0) direction = 2;
-  if (ps5.Left() == HIGH && direction != 1) direction = 3;
+void snake() {
+    if (start) {
+        jogo = true;
+        tft.fillScreen(ST77XX_BLACK);
+        tft.setTextColor(ST77XX_GREEN);
+        tft.setTextSize(2);
+        // Inicializa variáveis do jogo Snake
+        resetSnakeGame();
+        debounceTime = millis();
+        start = false;
+        tft.drawRect(0,  8, 160, 120, ST77XX_WHITE); 
+    }
+    if (isGameOver) {
+        tft.fillScreen(ST77XX_RED);
+        tft.setCursor(30, 50);
+        tft.setTextColor(ST77XX_WHITE);
+        tft.print("Game Over");
+        delay(1000);
+        resetSnakeGame();
+        m = 0;
+        navigateMenu(0);
+        return ;
+    }
 
-  // Sai do jogo se o botão Circle for pressionado
-  if (ps5.Circle() == HIGH) {
-    jogo = false;
-    m = 0;
-    currentItem = 0;
-  }
-  if ((millis() - Debounce) > 150){
-      Debounce = millis();
-      // Atualiza a posição do Snake
-      updateSnake();
-      // Renderiza o Snake
-      drawSnake();
-  }
-  
+    // Verifica controles
+    if (ps5.Up() == HIGH && direction != 2) direction = 0;
+    if (ps5.Right() == HIGH && direction != 3) direction = 1;
+    if (ps5.Down() == HIGH && direction != 0) direction = 2;
+    if (ps5.Left() == HIGH && direction != 1) direction = 3;
+
+    // Sai do jogo se o botão Circle for pressionado
+    if (ps5.Circle() == HIGH) {
+        jogo = false;
+        m = 0;
+        currentItem = 0;
+    }
+
+    if ((millis() - debounceTime) > 150) {
+        debounceTime = millis();
+        // Atualiza a posição do Snake
+        updateSnake();
+        // Renderiza o Snake e a pontuação
+        drawSnake();
+        drawScore();
+        tft.drawRect(0,  8, 160, 128, ST77XX_WHITE); 
+    }
 }
-          
-        
 
-void resetSnakeGame(){
-  snakeLength = 3;
-  snakeX[0] = 5;
-  snakeY[0] = 5;
-  for (int i = 1; i < snakeLength; i++) {
-    snakeX[i] = snakeX[0] - i;
-    snakeY[i] = snakeY[0];
-  }
-  spawnFood();
-  isGameOver = false;
-} 
-
+void resetSnakeGame() {
+    snakeLength = 3;
+    snakeX[0] = 5;
+    snakeY[0] = 5;
+    for (int i = 1; i < snakeLength; i++) {
+        snakeX[i] = snakeX[0] - i;
+        snakeY[i] = snakeY[0];
+    }
+    snakeY[0]++;
+    spawnFood();
+    score = 0;  // Reinicia a pontuação
+    isGameOver = false;
+}
 
 void updateSnake() {
-  // Move o corpo do Snake
-  for (int i = snakeLength - 1; i > 0; i--) {
-    snakeX[i] = snakeX[i - 1];
-    snakeY[i] = snakeY[i - 1];
-    isGameOver = false;
-  }
-
-  // Move a cabeça do Snake
-  if (direction == 0) snakeY[0]--; // cima
-  if (direction == 1) snakeX[0]++; // direita
-  if (direction == 2) snakeY[0]++; // baixo
-  if (direction == 3) snakeX[0]--; // esquerda
-
-  // Verifica se bate nas bordas
-  if(snakeX[0] == 0 ){
-    isGameOver = true;
-  }
-  if (snakeX[0] >19  || snakeY[0] < 0 || snakeY[0] > 16) {
-    isGameOver = true;
-  }
-
-  // Verifica se bate na snake
-  for (int i = 1; i < snakeLength; i++) {
-    if (snakeX[0] == snakeX[i] && snakeY[0] == snakeY[i]) {
-      isGameOver = true;
+    // Move o corpo do Snake
+    for (int i = snakeLength - 1; i > 0; i--) {
+        oldSnakeX[i] = snakeX[i];
+        oldSnakeY[i] = snakeY[i];
+        snakeX[i] = snakeX[i - 1];
+        snakeY[i] = snakeY[i - 1];
     }
-  }
-  // Verifica se comeu a comida
-  if (snakeX[0] == foodX && snakeY[0] == foodY) {
-    snakeLength++;
-    spawnFood();
-    isGameOver = false;
-  }
+
+    // Move a cabeça do Snake
+    if (direction == 0) snakeY[0]--; // cima
+    if (direction == 1) snakeX[0]++; // direita
+    if (direction == 2) snakeY[0]++; // baixo
+    if (direction == 3) snakeX[0]--; // esquerda
+
+    // Verifica se bate nas bordas
+    if (snakeX[0] > 19 || snakeX[0] < 0 || snakeY[0] < 1 || snakeY[0] > 15) {
+        isGameOver = true;
+    }
+
+    // Verifica se bate na própria cobra
+    for (int i = 1; i < snakeLength; i++) {
+        if (snakeX[0] == snakeX[i] && snakeY[0] == snakeY[i]) {
+            isGameOver = true;
+        }
+    }
+
+    // Verifica se comeu a comida
+    if (snakeX[0] == foodX && snakeY[0] == foodY) {
+        snakeLength++;
+        spawnFood();
+        score++;  // Incrementa a pontuação
+    }
 }
 
 void drawSnake() {
-  tft.fillScreen(ST77XX_BLACK);
+    // Desenha a comida
+    tft.fillRect(foodX * 8, foodY * 8, 8, 8, ST77XX_RED);
 
-  // Desenha a comida
-  tft.fillRect(foodX * 8, foodY * 8, 8, 8, ST77XX_RED);
+    // Desenha o Snake
+    for (int i = 0; i < snakeLength; i++) {
+      tft.fillRect(oldSnakeX[i] * 8, oldSnakeY[i] * 8, 8, 8, ST77XX_BLACK);
+      tft.fillRect(snakeX[i] * 8, snakeY[i] * 8, 8, 8, ST77XX_GREEN);
+    }
+}
 
-  // Desenha o Snake
-  for (int i = 0; i < snakeLength; i++) {
-    tft.fillRect(snakeX[i] * 8, snakeY[i] * 8, 8, 8, ST77XX_GREEN);
-  }
+void drawScore() {
+    // Desenha a pontuação no canto superior esquerdo
+    tft.setCursor(0, 0);
+    tft.setTextColor(ST77XX_WHITE);
+    tft.setTextSize(1);
+    tft.fillRect(0, 0, 50, 10, ST77XX_BLACK); // Apaga o texto anterior
+    tft.print("Score: ");
+    tft.print(score);
 }
 
 void spawnFood() {
-  foodX = random(0, 16);
-  foodY = random(0, 16);
+    foodX = random(0, 19);
+    foodY = random(0, 15);
 }
 
 void effect(){
@@ -1161,4 +1183,87 @@ void effect(){
   }
   FastLED.show();
 
+}
+
+void encherCopo(){
+
+  tft.setCursor(20,10);
+  tft.print("Aguarde...");
+
+  tempo1 = bebida1 * 0.044;
+  analogWrite(b1, 255);
+  delay(600);
+  delay(tempo1*1000);
+  analogWrite(b1, 0);
+  delay(50);
+
+  tempo2 = bebida2 * 0.047;
+  analogWrite(b2, 255);
+  delay(tempo1*1000);
+  analogWrite(b2, 0);
+  delay(50);
+
+  tempo3 = bebida3 * 0.007;
+  analogWrite(b3, 255);
+  delay(tempo1*1000);
+  analogWrite(b3, 0);
+  delay(50);
+
+  tempo4 = bebida4 * 0.045;
+  analogWrite(b4, 255);
+  delay(tempo1*1000);
+  analogWrite(b4, 0);
+  delay(50);
+
+  m=0;
+  currentItem = 0;
+  navigateMenu(0);
+  return;
+  
+}
+
+void shotRefrigerante(){
+  bebida1 = 25;
+  tempo1 = bebida1 * 0.044;
+  analogWrite(b1, 255);
+  delay(600);
+  delay(tempo1*1000);
+  analogWrite(b1, 0);
+  delay(550);
+
+  bebida2 = 225;
+  tempo2 = bebida2 * 0.047;
+  analogWrite(b2, 255);
+  delay(600);
+  delay(tempo2*1000);
+  analogWrite(b2, 0);
+  delay(50);
+
+}
+
+void tracadinho(){
+  bebida3 = 125;
+  tempo3 = bebida3 * 0.007;
+  analogWrite(b3, 255);
+  delay(tempo3*1000);
+  analogWrite(b3, 0);
+  delay(50);
+
+  bebida4 = 125;
+  tempo4 = bebida4 * 0.045;
+  analogWrite(b4, 255);
+  delay(tempo3*1000);
+  analogWrite(b4, 0);
+  delay(50);
+
+}
+
+void shot(){
+  bebida1 = 25;
+  tempo1 = bebida1 * 0.044;
+  analogWrite(b1, 255);
+  delay(600);
+  delay(tempo1*1000);
+  analogWrite(b1, 0);
+  delay(50);
 }
