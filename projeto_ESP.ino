@@ -66,6 +66,7 @@ int quantidade = 5;
 unsigned long bebida1 = 0, bebida2 = 0, bebida3 = 0, bebida4 = 0;
 int copo = 0;
 unsigned long tempo1 = 0,tempo2 = 0,tempo3 = 0,tempo4 = 0;
+int vitoria = 0;
 
 
 
@@ -283,13 +284,11 @@ void setup() {
 
 
 void loop() {
+  Serial.println(currentItem);
   if(hue==256){
     hue = 0;
   }
   effect();
-
-
-
 
   if(m == 4){
     if(buttonPressedUp()){
@@ -428,6 +427,7 @@ void loop() {
     else if(m==3 && currentItem == 0){
       start = true;
       m=4;
+      vitoria = 0;
     }
     else if(m==3 && currentItem == 1){
       start = true;
@@ -436,9 +436,9 @@ void loop() {
     } 
     else if(m==3 && currentItem == 2){
       start = true;
+      vitoria = 0;
       m=5;
     }
-
     else if(m==6 && currentItem == 0){
       currentEffect = 0;
       currentItem = 0;
@@ -484,7 +484,13 @@ void loop() {
       shot();
       m=0;
     }
+    else if(m==11){
+      m=0;
+    }
 
+    else if(m==12){
+      m=0;
+    }
     currentItem = 0; 
     navigateMenu(0);
   }
@@ -756,6 +762,27 @@ void navigateMenu(int direction) {
       }
     break;
     }
+    case 11:{
+      tft.setTextSize(1);
+      tft.fillScreen(ST77XX_BLACK);
+      tft.setCursor(20, 20);
+      tft.print("Vitoria do jogador:");
+      tft.println(vitoria);
+
+      tft.setCursor(20, 50);
+      tft.print("Pressione X para continuar");
+    break;
+    } 
+
+    case 12:{
+      tft.setTextSize(1);
+      tft.fillScreen(ST77XX_BLACK);
+      tft.setCursor(20, 20);
+      tft.print("EMPATE");
+      tft.setCursor(20, 50);
+      tft.print("Pressione X para continuar");
+    break;
+    } 
   }
 }
 
@@ -805,9 +832,16 @@ void jogoDoGalo(){
   }
   
   if(verificaVitoria()){
+    if(turn){
+      vitoria = 1;
+    }
+    else if(!turn){
+      vitoria = 2;
+    }
+
     ronda = 0;
     start = true;
-    m=0;
+    m=11;
     currentItem=0;
     turn = false;
     for(int i = 0; i < 3; i++){
@@ -821,7 +855,7 @@ void jogoDoGalo(){
   if(ronda == 9){
     start = true;
     ronda = 0;
-    m=0;
+    m=12;
     currentItem=0;
     turn = false;
     for(int i = 0; i < 3; i++){
@@ -830,7 +864,6 @@ void jogoDoGalo(){
       }       
     }
     navigateMenu(0);
-    return;
   }
 
   if(buttonPressedCircle()){
@@ -934,6 +967,17 @@ void pong(){
       int new_y = ball_y + ball_dir_y;
 
       if(score1 == 10 || score2 == 10){
+        if(score1 == 10){
+          vitoria = 1;
+          m = 11;
+          navigateMenu(0);
+        }
+        else if(score2 = 10){
+          vitoria = 2;
+          m = 11;
+          navigateMenu(0);
+        }
+
         score1 = 0;
         score2 = 0;
         resetBall = true;
@@ -1228,37 +1272,52 @@ void encherCopo(){
   tft.setCursor(20,10);
   tft.print("Aguarde...");
 
-  tempo1 = bebida1 * 0.044 * 1000;
-  analogWrite(b1, 255);
-  analogWrite(b1, 0);
+  if(bebida1 !=0){
+    tempo1 = bebida1 * 0.044 * 1000;
+    analogWrite(b1, 255);
+    delay(tempo1);
+    analogWrite(b1, 0);
+    delay(50);
+  }
 
+  if(bebida2 !=0){
+    tempo2 = bebida2 * 0.047* 1000;
+    analogWrite(b2, 255);
+    delay(tempo2);
+    analogWrite(b2, 0);
+    delay(50);
+  }
 
-  tempo2 = bebida2 * 0.047* 1000;
-  analogWrite(b2, 255);
-  delay(tempo1);
-  analogWrite(b2, 0);
-  delay(50);
+  if(bebida3 !=0){
+    tempo3 = bebida3 * 0.047* 1000;
+    analogWrite(b3, 255);
+    delay(tempo3);
+    analogWrite(b3, 0);
+    delay(50);
+  }
 
-  tempo3 = bebida3 * 0.007* 1000;
-  analogWrite(b3, 255);
-  delay(tempo1);
-  analogWrite(b3, 0);
-  delay(50);
-
-  tempo4 = bebida4 * 0.045* 1000;
-  analogWrite(b4, 255);
-  delay(tempo1);
-  analogWrite(b4, 0);
-  delay(50);
+  if(bebida4 !=0){
+    tempo4 = bebida4 * 0.045* 1000;
+    analogWrite(b4, 255);
+    delay(tempo4);
+    analogWrite(b4, 0);
+    delay(50);
+  }
 
   m=0;
   currentItem = 0;
   navigateMenu(0);
+
+  tempo1 = 0;
+  tempo2 = 0;
+  tempo3 = 0;
+  tempo4 = 0;
+
   return;
-  
 }
 
 void shotRefrigerante(){
+  
   bebida1 = 25;
   tempo1 = bebida1 * 0.044;
   analogWrite(b1, 255);
@@ -1275,11 +1334,16 @@ void shotRefrigerante(){
   analogWrite(b2, 0);
   delay(50);
 
+  bebida1 = 0;
+  bebida2 = 0;
+  navigateMenu(0);
+  return;
+
 }
 
 void tracadinho(){
   bebida3 = 125;
-  tempo3 = bebida3 * 0.007;
+  tempo3 = bebida3 * 0.047;
   analogWrite(b3, 255);
   delay(tempo3*1000);
   analogWrite(b3, 0);
@@ -1288,9 +1352,14 @@ void tracadinho(){
   bebida4 = 125;
   tempo4 = bebida4 * 0.045;
   analogWrite(b4, 255);
-  delay(tempo3*1000);
+  delay(tempo4*1000);
   analogWrite(b4, 0);
   delay(50);
+
+  bebida3 = 0;
+  bebida4 = 0;
+  navigateMenu(0);
+  return;
 
 }
 
@@ -1302,4 +1371,8 @@ void shot(){
   delay(tempo1*1000);
   analogWrite(b1, 0);
   delay(50);
+
+  bebida1 = 0;
+  navigateMenu(0);
+  return;
 }
